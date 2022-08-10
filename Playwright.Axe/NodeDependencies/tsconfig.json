@@ -6,7 +6,8 @@
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "jsx": "react",
-        "moduleResolution": "Node"
+        "moduleResolution": "Node",
+        "types": ["node", "jest", "@testing-library/jest-dom"]
     },
     "ts-node": {
         "compilerOptions": {

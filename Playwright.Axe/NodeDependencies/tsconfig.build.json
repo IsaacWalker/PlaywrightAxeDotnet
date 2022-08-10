@@ -3,5 +3,5 @@
     "compilerOptions": {
         "noEmit": true
     },
-    "include": ["./report-src/index.tsx"]
+    "include": ["./src"]
 }

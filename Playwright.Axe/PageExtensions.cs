@@ -28,7 +28,7 @@ namespace Playwright.Axe
             IAxeContentProvider axeContentProvider = new DefaultAxeContentProvider();
             IAxeContentEmbedder axeContentEmbedder = new DefaultAxeContentEmbedder(axeContentProvider);
 
-            IAxeCoreWrapper axeCoreWrapper = new DefaultAxeCoreWrapper(axeContentEmbedder);
+            IAxeCoreWrapper axeCoreWrapper = new DefaultAxeCoreWrapper(axeContentEmbedder, axeContentProvider);
 
             return await axeCoreWrapper.GetRules(page, tags);
         }
@@ -67,7 +67,7 @@ namespace Playwright.Axe
             IAxeContentProvider axeContentProvider = new DefaultAxeContentProvider();
             IAxeContentEmbedder axeContentEmbedder = new DefaultAxeContentEmbedder(axeContentProvider);
 
-            IAxeCoreWrapper axeCoreWrapper = new DefaultAxeCoreWrapper(axeContentEmbedder);
+            IAxeCoreWrapper axeCoreWrapper = new DefaultAxeCoreWrapper(axeContentEmbedder, axeContentProvider);
 
             AxeResults results = await axeCoreWrapper.Run(page, context, options);
             IFileSystem fileSystem = new FileSystem();

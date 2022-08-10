@@ -15,6 +15,9 @@ namespace Playwright.Axe.AxeContent
         public string GetAxeCoreScriptContent() => GetFileContents("axe.js");
 
         /// <inheritdoc />
+        public string GetLibContent() => GetFileContents("lib.js");
+
+        /// <inheritdoc />
         public IDictionary<string, string> GetHtmlReportFiles()
         {
             IList<string> reportStaticFiles = new List<string>()

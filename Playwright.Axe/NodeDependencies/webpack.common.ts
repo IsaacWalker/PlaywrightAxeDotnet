@@ -1,23 +1,19 @@
 
 import path from "path";
 import { Configuration } from "webpack";
-import HtmlWebpackPlugin from "html-webpack-plugin";
 import { ESBuildMinifyPlugin } from "esbuild-loader";
 
 const enum EntryChunks {
     AxeCore = "axe-core",
-    Report = "report"
+    Report = "report",
+    Lib = "lib"
 }
 
-const config: Configuration = {
+const commonConfig: Configuration = {
     mode: "production",
-    entry: {
-        [EntryChunks.AxeCore]: path.join(__dirname, "./axe/index.axe-core.ts"),
-        [EntryChunks.Report]: path.join(__dirname, "./report-src/index.tsx")
-    },
     output: {
         path: path.join(__dirname, "dist"),
-        filename: "index.[name].js"
+        filename: "index.[name].js",
     },
     resolve: {
         extensions: [".js", ".ts", ".tsx"]
@@ -39,13 +35,7 @@ const config: Configuration = {
                 use: "swc-loader",
             }
         ]
-    },
-    plugins: [
-        new HtmlWebpackPlugin({
-            template: path.join(__dirname, "./report-src/index.html"),
-            chunks: [EntryChunks.Report]
-        })
-    ]
+    }
 }
 
-export default config;
+export { commonConfig, EntryChunks };

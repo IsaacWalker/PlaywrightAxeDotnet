@@ -23,7 +23,7 @@ namespace Playwright.Axe
             IAxeContentProvider axeContentProvider = new DefaultAxeContentProvider();
             IAxeContentEmbedder axeContentEmbedder = new DefaultAxeContentEmbedder(axeContentProvider);
 
-            IAxeCoreWrapper axeCoreWrapper = new DefaultAxeCoreWrapper(axeContentEmbedder);
+            IAxeCoreWrapper axeCoreWrapper = new DefaultAxeCoreWrapper(axeContentEmbedder, axeContentProvider);
 
             return await axeCoreWrapper.RunOnLocator(locator, options);
         }

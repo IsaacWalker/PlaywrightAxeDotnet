@@ -28,9 +28,12 @@ namespace Playwright.Axe.AxeCoreWrapper
 
         private readonly IAxeContentEmbedder m_axeContentEmbedder;
 
-        public DefaultAxeCoreWrapper(IAxeContentEmbedder axeContentEmbedder)
+        private readonly IAxeContentProvider m_contentContentProvider;
+
+        public DefaultAxeCoreWrapper(IAxeContentEmbedder axeContentEmbedder, IAxeContentProvider axeContentProvider)
         {
             m_axeContentEmbedder = axeContentEmbedder;
+            m_contentContentProvider = axeContentProvider;
         }
 
         /// <inheritdoc/>
@@ -75,6 +78,22 @@ namespace Playwright.Axe.AxeCoreWrapper
             object jsonObject = await page.EvaluateAsync<object>($"(runOptions) => window.axe.run({contextParam}{runParamTemplate})", paramString);
 
             return DeserializeResult<TResult>(jsonObject);
+        }
+
+        private async Task<AxeResults> EvaluateAxeRunPartial(IPage page, AxeRunContext? context = null, object? param = null)
+        {
+            string runPartialContent = m_contentContentProvider.GetLibContent();
+
+            string? paramString = param is null 
+                ? "{}"
+                : JsonSerializer.Serialize(param, s_jsonOptions);
+            string? contextParam = context is null 
+                ? "document" 
+                : ($"JSON.parse(\'{JsonSerializer.Serialize(context, s_jsonOptions)}\'),");
+
+            object partialRunList = await page.EvaluateAsync<object>($"async () => await (() => {{{runPartialContent} return exposedModules.runPartialAndMerge({contextParam}, {paramString}, window)}})()");
+
+            throw new NotImplementedException();
         }
 
         private static TResult DeserializeResult<TResult>(object jsonObject)

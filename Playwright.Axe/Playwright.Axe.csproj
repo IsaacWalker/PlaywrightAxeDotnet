@@ -40,6 +40,8 @@
 		<ItemGroup>
 			<EmbeddedResource Include="NodeDependencies/dist/index.axe-core.js" Link="axe.js">
 			</EmbeddedResource>
+			<EmbeddedResource Include="NodeDependencies/dist/index.lib.js" Link="lib.js">
+			</EmbeddedResource>
 			<EmbeddedResource Include="NodeDependencies/dist/index.report.js" Link="index.report.js">
 			</EmbeddedResource>
 			<EmbeddedResource Include="NodeDependencies/dist/index.html" Link="index.html">

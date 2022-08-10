@@ -2,7 +2,7 @@
 import { Config } from "jest";
 
 const config: Config = {
-    rootDir: "./report-src",
+    rootDir: "./src",
     transform: {
         "^.+\\.(t|j)sx?$": "@swc/jest",
     },
