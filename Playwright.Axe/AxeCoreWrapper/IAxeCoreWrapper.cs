@@ -25,5 +25,10 @@ namespace Playwright.Axe.AxeCoreWrapper
         /// Runs Axe on a Playwright Locator
         /// </summary>
         public Task<AxeResults> RunOnLocator(ILocator locator, AxeRunOptions? options = null);
+
+        /// <summary>
+        /// Gets the frames for a particular run context and determines what context object to use in that frame.
+        /// </summary>
+        public Task<IList<AxeFrameContext>> GetFrameContexts(IPage page, AxeRunContext? context = null, AxeRunOptions? options = null);
     }
 }

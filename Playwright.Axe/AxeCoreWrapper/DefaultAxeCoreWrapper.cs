@@ -13,18 +13,7 @@ namespace Playwright.Axe.AxeCoreWrapper
     /// <inheritdoc/>
     internal sealed class DefaultAxeCoreWrapper : IAxeCoreWrapper
     {
-        private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-            {
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
-                new RunContextJsonConverter()
-            },
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            ReferenceHandler = ReferenceHandler.IgnoreCycles
-        };
+        private static readonly JsonSerializerOptions s_jsonOptions = AxeJsonSerializerOptions.Value;
 
         private readonly IAxeContentEmbedder m_axeContentEmbedder;
 
@@ -62,6 +51,15 @@ namespace Playwright.Axe.AxeCoreWrapper
 
             object jsonObject = await locator.EvaluateAsync<object>($"(node, runOptions) => window.axe.run(node, {runParamTemplate})", paramString);
             return DeserializeResult<AxeResults>(jsonObject);
+        }
+
+        /// <inheritdoc/>
+        public async Task<IList<AxeFrameContext>> GetFrameContexts(IPage page, AxeRunContext? context = null, AxeRunOptions? options = null)
+        {
+            await m_axeContentEmbedder.EmbedAxeCoreIntoPage(page, options?.Iframes);
+
+            object jsonObject = await page.EvaluateAsync<object>($"() => window.axe.utils.getFrameContexts(document)");
+            return DeserializeResult<List<AxeFrameContext>>(jsonObject);
         }
 
         private static async Task<TResult> EvaluateAxeRun<TResult>(IPage page, AxeRunContext? context = null, object? param = null)
