@@ -2,6 +2,8 @@
 
 using Microsoft.Playwright.MSTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Playwright.Axe.AxeContent;
+using Playwright.Axe.AxeCoreWrapper;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -200,7 +202,38 @@ namespace Playwright.Axe.Test
             await Page!.RunAxe(reportOptions: reportOptions);
 
             Assert.IsTrue(File.Exists(expectedReportPath));
-        }   
+        }
+
+        [TestMethod]
+        public async Task GetFrameContexts_RunsOnFrameWithMultipleFrames_ReturnsExpectedFrameSelectors()
+        {
+            await NavigateToPage("frames/nested-iframe.html");
+            DefaultAxeCoreWrapper axeCoreWrapper = CreateDefaultAxeCoreWrapper();
+
+            IList<AxeFrameContext> frameContexts = await axeCoreWrapper.GetFrameContexts(Page!);
+
+            const string expectedFrameSelectorOne = "html > body > iframe:nth-child(2)";
+            const string expectedFrameSelectorTwo = "html > body > iframe:nth-child(3)";
+
+            Assert.AreEqual(frameContexts.Count, 2);
+            Assert.IsTrue(frameContexts.Any(fc => fc.FrameSelector.StringValue == expectedFrameSelectorOne));
+            Assert.IsTrue(frameContexts.Any(fc => fc.FrameSelector.StringValue == expectedFrameSelectorTwo));
+        }
+
+        // Isaac TODO - Add tests for GetFrameContexts that use context and options.
+
+        [TestMethod]
+        public async Task GetFrameContexts_RunsWithContext_ReturnsFrameContexts()
+        {
+            await NavigateToPage("frames/nested-iframe.html");
+            DefaultAxeCoreWrapper axeCoreWrapper = CreateDefaultAxeCoreWrapper();
+
+            AxeSerialContext context = new(null, null);
+
+            IList<AxeFrameContext> frameContexts = await axeCoreWrapper.GetFrameContexts(Page!, context);
+
+            Assert.AreEqual(frameContexts.Count, 2);
+        }
 
         private static IEnumerable<object?[]> GetAxeRulesParameters()
         {
@@ -345,6 +378,15 @@ namespace Playwright.Axe.Test
         {
             Uri uri = new(TestServer.BaseUri, htmlPageName);
             await Page!.GotoAsync(uri.ToString());
+        }
+
+        private static DefaultAxeCoreWrapper CreateDefaultAxeCoreWrapper()
+        {
+            DefaultAxeContentProvider contentProvider = new();
+            DefaultAxeContentEmbedder contextEmbedder = new(contentProvider);
+            DefaultAxeCoreWrapper axeCoreWrapper = new(contextEmbedder);
+
+            return axeCoreWrapper;
         }
     }
 }

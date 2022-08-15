@@ -54,11 +54,20 @@ namespace Playwright.Axe.AxeCoreWrapper
         }
 
         /// <inheritdoc/>
-        public async Task<IList<AxeFrameContext>> GetFrameContexts(IPage page, AxeRunContext? context = null, AxeRunOptions? options = null)
+        public async Task<IList<AxeFrameContext>> GetFrameContexts(IPage page, AxeSerialContext? context = null, AxeRunOptions? options = null)
         {
             await m_axeContentEmbedder.EmbedAxeCoreIntoPage(page, options?.Iframes);
 
-            object jsonObject = await page.EvaluateAsync<object>($"() => window.axe.utils.getFrameContexts(document)");
+            string? serializedContext = context is null ? null : JsonSerializer.Serialize(context, s_jsonOptions);
+            string? serializedOptions = options is null ? "{}" : JsonSerializer.Serialize(options, s_jsonOptions);
+
+            string expression = $"([context, options]) => window.axe.utils.getFrameContexts(" +
+                $"context === null ? document : JSON.parse(context), " +
+                $"JSON.parse(options))";
+
+            object evalOptions = new object?[] { serializedContext, serializedOptions };
+
+            object jsonObject = await page.EvaluateAsync<object>(expression, evalOptions);
             return DeserializeResult<List<AxeFrameContext>>(jsonObject);
         }
 

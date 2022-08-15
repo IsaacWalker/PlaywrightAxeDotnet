@@ -29,6 +29,6 @@ namespace Playwright.Axe.AxeCoreWrapper
         /// <summary>
         /// Gets the frames for a particular run context and determines what context object to use in that frame.
         /// </summary>
-        public Task<IList<AxeFrameContext>> GetFrameContexts(IPage page, AxeRunContext? context = null, AxeRunOptions? options = null);
+        public Task<IList<AxeFrameContext>> GetFrameContexts(IPage page, AxeSerialContext? context = null, AxeRunOptions? options = null);
     }
 }
