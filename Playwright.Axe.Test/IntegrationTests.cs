@@ -2,7 +2,10 @@
 
 using Microsoft.Playwright.MSTest;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Playwright.Axe.AxeContent;
+using Playwright.Axe.AxeCoreWrapper;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -200,7 +203,67 @@ namespace Playwright.Axe.Test
             await Page!.RunAxe(reportOptions: reportOptions);
 
             Assert.IsTrue(File.Exists(expectedReportPath));
-        }   
+        }
+
+        [TestMethod]
+        public async Task GetFrameContexts_RunsOnFrameWithMultipleFrames_ReturnsExpectedFrameSelectors()
+        {
+            await NavigateToPage("frames/nested-iframe.html");
+            DefaultAxeCoreWrapper axeCoreWrapper = CreateDefaultAxeCoreWrapper();
+
+            IList<AxeFrameContext> frameContexts = await axeCoreWrapper.GetFrameContexts(Page!);
+
+            const string expectedFrameSelectorOne = "html > body > iframe:nth-child(2)";
+            const string expectedFrameSelectorTwo = "html > body > iframe:nth-child(3)";
+
+            Assert.AreEqual(frameContexts.Count, 2);
+            Assert.IsTrue(frameContexts.Any(fc => fc.FrameSelector.StringValue == expectedFrameSelectorOne));
+            Assert.IsTrue(frameContexts.Any(fc => fc.FrameSelector.StringValue == expectedFrameSelectorTwo));
+        }
+
+        [TestMethod]
+        public async Task GetFrameContexts_RunsWithIncludeExcludeContext_ReturnsExpectedFrameContexts()
+        {
+            await NavigateToPage("frames/nested-iframe.html");
+            DefaultAxeCoreWrapper axeCoreWrapper = CreateDefaultAxeCoreWrapper();
+
+            IList<string> frame1IncludeSelectors = new List<string>() { "#frame-fail", "div" };
+            IList<string> frame2IncudeSelectors = new List<string>() { "#frame-pass", "header" };
+
+            IList<AxeCrossTreeSelector> includeSelector = new List<AxeCrossTreeSelector>() 
+            {
+                new AxeCrossTreeSelector(frame1IncludeSelectors),
+                new AxeCrossTreeSelector(frame2IncudeSelectors),
+            };
+
+            IList<string> frame1ExcludeSelectors = new List<string>() { "#frame-fail", "a" };
+            IList<string> frame2ExcludeSelectors = new List<string>() { "#frame-pass", "span" };
+
+            IList<AxeCrossTreeSelector> excludeSelector = new List<AxeCrossTreeSelector>()
+            {
+                new AxeCrossTreeSelector(frame1ExcludeSelectors),
+                new AxeCrossTreeSelector(frame2ExcludeSelectors),
+            };
+
+            AxeSerialSelector include = new(includeSelector);
+            AxeSerialSelector exclude = new(excludeSelector);
+
+            AxeSerialContext context = new(include, exclude);
+
+            IList<AxeFrameContext> frameContexts = await axeCoreWrapper.GetFrameContexts(Page!, context);
+
+            const int expectedFrameCount = 2;
+            ICollection expectedFirstFrameContextValues = new List<string>() { "div" };
+            ICollection expectedSecondFrameContextValues = new List<string>() { "header" };
+
+            int actualFrameCount = frameContexts.Count;
+            ICollection? actualFirstFrameContextValues = frameContexts![0]!.FrameContext!.Include!.Array[0]!.ArrayValue! as ICollection;
+            ICollection? actualSecondFrameContextValues = frameContexts![1]!.FrameContext!.Include!.Array[0]!.ArrayValue! as ICollection;  
+
+            Assert.AreEqual(expectedFrameCount, actualFrameCount);
+            CollectionAssert.AreEqual(expectedFirstFrameContextValues, actualFirstFrameContextValues);
+            CollectionAssert.AreEqual(expectedSecondFrameContextValues, actualSecondFrameContextValues);
+        }
 
         private static IEnumerable<object?[]> GetAxeRulesParameters()
         {
@@ -345,6 +408,15 @@ namespace Playwright.Axe.Test
         {
             Uri uri = new(TestServer.BaseUri, htmlPageName);
             await Page!.GotoAsync(uri.ToString());
+        }
+
+        private static DefaultAxeCoreWrapper CreateDefaultAxeCoreWrapper()
+        {
+            DefaultAxeContentProvider contentProvider = new();
+            DefaultAxeContentEmbedder contextEmbedder = new(contentProvider);
+            DefaultAxeCoreWrapper axeCoreWrapper = new(contextEmbedder);
+
+            return axeCoreWrapper;
         }
     }
 }

@@ -13,18 +13,7 @@ namespace Playwright.Axe.AxeCoreWrapper
     /// <inheritdoc/>
     internal sealed class DefaultAxeCoreWrapper : IAxeCoreWrapper
     {
-        private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters =
-            {
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
-                new RunContextJsonConverter()
-            },
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            ReferenceHandler = ReferenceHandler.IgnoreCycles
-        };
+        private static readonly JsonSerializerOptions s_jsonOptions = AxeJsonSerializerOptions.Value;
 
         private readonly IAxeContentEmbedder m_axeContentEmbedder;
 
@@ -62,6 +51,24 @@ namespace Playwright.Axe.AxeCoreWrapper
 
             object jsonObject = await locator.EvaluateAsync<object>($"(node, runOptions) => window.axe.run(node, {runParamTemplate})", paramString);
             return DeserializeResult<AxeResults>(jsonObject);
+        }
+
+        /// <inheritdoc/>
+        public async Task<IList<AxeFrameContext>> GetFrameContexts(IPage page, AxeSerialContext? context = null, AxeRunOptions? options = null)
+        {
+            await m_axeContentEmbedder.EmbedAxeCoreIntoPage(page, options?.Iframes);
+
+            string? serializedContext = context is null ? null : JsonSerializer.Serialize(context, s_jsonOptions);
+            string? serializedOptions = options is null ? "{}" : JsonSerializer.Serialize(options, s_jsonOptions);
+
+            string expression = $"([context, options]) => window.axe.utils.getFrameContexts(" +
+                $"context === null ? document : JSON.parse(context), " +
+                $"JSON.parse(options))";
+
+            object evalOptions = new object?[] { serializedContext, serializedOptions };
+
+            object jsonObject = await page.EvaluateAsync<object>(expression, evalOptions);
+            return DeserializeResult<List<AxeFrameContext>>(jsonObject);
         }
 
         private static async Task<TResult> EvaluateAxeRun<TResult>(IPage page, AxeRunContext? context = null, object? param = null)
