@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Playwright.Axe.AxeContent;
 using Playwright.Axe.AxeCoreWrapper;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -220,19 +221,48 @@ namespace Playwright.Axe.Test
             Assert.IsTrue(frameContexts.Any(fc => fc.FrameSelector.StringValue == expectedFrameSelectorTwo));
         }
 
-        // Isaac TODO - Add tests for GetFrameContexts that use context and options.
-
         [TestMethod]
-        public async Task GetFrameContexts_RunsWithContext_ReturnsFrameContexts()
+        public async Task GetFrameContexts_RunsWithIncludeExcludeContext_ReturnsExpectedFrameContexts()
         {
             await NavigateToPage("frames/nested-iframe.html");
             DefaultAxeCoreWrapper axeCoreWrapper = CreateDefaultAxeCoreWrapper();
 
-            AxeSerialContext context = new(null, null);
+            IList<string> frame1IncludeSelectors = new List<string>() { "#frame-fail", "div" };
+            IList<string> frame2IncudeSelectors = new List<string>() { "#frame-pass", "header" };
+
+            IList<AxeCrossTreeSelector> includeSelector = new List<AxeCrossTreeSelector>() 
+            {
+                new AxeCrossTreeSelector(frame1IncludeSelectors),
+                new AxeCrossTreeSelector(frame2IncudeSelectors),
+            };
+
+            IList<string> frame1ExcludeSelectors = new List<string>() { "#frame-fail", "a" };
+            IList<string> frame2ExcludeSelectors = new List<string>() { "#frame-pass", "span" };
+
+            IList<AxeCrossTreeSelector> excludeSelector = new List<AxeCrossTreeSelector>()
+            {
+                new AxeCrossTreeSelector(frame1ExcludeSelectors),
+                new AxeCrossTreeSelector(frame2ExcludeSelectors),
+            };
+
+            AxeSerialSelector include = new(includeSelector);
+            AxeSerialSelector exclude = new(excludeSelector);
+
+            AxeSerialContext context = new(include, exclude);
 
             IList<AxeFrameContext> frameContexts = await axeCoreWrapper.GetFrameContexts(Page!, context);
 
-            Assert.AreEqual(frameContexts.Count, 2);
+            const int expectedFrameCount = 2;
+            ICollection expectedFirstFrameContextValues = new List<string>() { "div" };
+            ICollection expectedSecondFrameContextValues = new List<string>() { "header" };
+
+            int actualFrameCount = frameContexts.Count;
+            ICollection? actualFirstFrameContextValues = frameContexts![0]!.FrameContext!.Include!.Array[0]!.ArrayValue! as ICollection;
+            ICollection? actualSecondFrameContextValues = frameContexts![1]!.FrameContext!.Include!.Array[0]!.ArrayValue! as ICollection;  
+
+            Assert.AreEqual(expectedFrameCount, actualFrameCount);
+            CollectionAssert.AreEqual(expectedFirstFrameContextValues, actualFirstFrameContextValues);
+            CollectionAssert.AreEqual(expectedSecondFrameContextValues, actualSecondFrameContextValues);
         }
 
         private static IEnumerable<object?[]> GetAxeRulesParameters()

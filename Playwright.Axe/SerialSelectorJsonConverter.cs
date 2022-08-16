@@ -51,6 +51,8 @@ namespace Playwright.Axe
                                 
                             reader.Read();
                         }
+
+                        crossTreeSelectors.Add(new AxeCrossTreeSelector(innerTreeSelectors));
                     }
                     else if (reader.TokenType == JsonTokenType.String)
                     {

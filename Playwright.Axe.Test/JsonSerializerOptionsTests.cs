@@ -21,7 +21,9 @@ namespace Playwright.Axe.Test
         [DynamicData(nameof(GetAxeSerialSelectorDeserializationData), DynamicDataSourceType.Method)]
         public void AxeSerialSelector_WithOptions_DeserializesToExpected(string jsonInput, AxeSerialSelector expectedAxeSerialSelector)
         {
-            AxeSerialSelector actualAxeSerialSelector = JsonSerializer.Deserialize<AxeSerialSelector>(jsonInput, AxeJsonSerializerOptions.Value);
+            AxeSerialSelector? actualAxeSerialSelector = JsonSerializer.Deserialize<AxeSerialSelector>(jsonInput, AxeJsonSerializerOptions.Value);
+
+            Assert.IsNotNull(actualAxeSerialSelector);
             Assert.AreEqual(expectedAxeSerialSelector, actualAxeSerialSelector!);
         }
 
@@ -42,6 +44,16 @@ namespace Playwright.Axe.Test
                 }),
                 "[\"#id1\",\"#id2\"]"
             };
+
+            yield return new object[]
+{
+                new AxeSerialSelector(new List<AxeCrossTreeSelector>()
+                {
+                    new AxeCrossTreeSelector(new List<string>() { "#frame1", "a" }),
+                    new AxeCrossTreeSelector(new List<string>() { "#frame2", "#inner-frame2", "span" })
+                }),
+                "[[\"#frame1\",\"a\"],[\"#frame2\",\"#inner-frame2\",\"span\"]]"
+            };
         }
 
         private static IEnumerable<object[]> GetAxeSerialSelectorDeserializationData()
@@ -59,6 +71,16 @@ namespace Playwright.Axe.Test
                 {
                     new AxeCrossTreeSelector("#id1"),
                     new AxeCrossTreeSelector("#id2")
+                })
+            };
+
+            yield return new object[]
+            {
+                "[[\"#frame1\",\"a\"],[\"#frame2\",\"#inner-frame2\",\"span\"]]",
+                new AxeSerialSelector(new List<AxeCrossTreeSelector>()
+                {
+                    new AxeCrossTreeSelector(new List<string>() { "#frame1", "a" }),
+                    new AxeCrossTreeSelector(new List<string>() { "#frame2", "#inner-frame2", "span" })
                 })
             };
         }
